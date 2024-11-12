@@ -1,63 +1,57 @@
-// src/pages/Dashboard.js
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; // Import Link from react-router-dom
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode'; // Correct import for jwtDecode (named export)
 
 function Dashboard() {
+    const [user, setUser] = useState({}); // State for storing user data
+    const [loading, setLoading] = useState(true); // State for loading status
+    const [error, setError] = useState(null); // State for error message
+    
+    const navigate = useNavigate(); // Hook for navigation
+    const token = localStorage.getItem("token"); // Get token from localStorage
 
-    // State user
-    const [user, setUser] = useState({});
-    const [loading, setLoading] = useState(true); // Loader state
-    const [error, setError] = useState(null); // Error state
-
-    // Define navigate
-    const navigate = useNavigate();
-
-    // Token
-    const token = localStorage.getItem("token");
-
-    // Function "fetchData"
-    const fetchData = async () => {
-        try {
-            // Set axios header with type Authorization + Bearer token
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            
-            // Fetch user from Rest API
-            const response = await axios.get('http://localhost:8000/api/user');
-            
-            // Set response user to state
-            setUser(response.data);
-        } catch (error) {
-            setError("Failed to fetch user data, please try again.");
-        } finally {
-            setLoading(false); // Stop loading
+    // Function to decode JWT and fetch user data
+    const decodeTokenAndFetchUser = () => {
+        if (token) {
+            try {
+                // Decode the token to get user info
+                const decodedToken = jwtDecode(token); // Use jwtDecode to decode token
+                
+                // Log the decoded token to see the payload (for debugging)
+                console.log(decodedToken); // For debugging purposes
+                
+                // Set user data from decoded token to state
+                setUser(decodedToken); // Assuming user data is in the payload
+                setLoading(false); // Stop loading state
+            } catch (error) {
+                setError("Token tidak valid, silakan login kembali.");
+                setLoading(false);
+            }
+        } else {
+            navigate('/'); // If token is not available, navigate to login page
         }
     };
 
-    // Hook useEffect
+    // useEffect hook to run the function when the component is mounted
     useEffect(() => {
-        // Check token empty
-        if (!token) {
-            navigate('/'); // Redirect to login page
-        } else {
-            fetchData(); // Call function "fetchData"
-        }
+        decodeTokenAndFetchUser(); // Decode token and set user data
     }, [navigate, token]);
 
-    // Function logout
+    // Function to handle logout
     const logoutHandler = async () => {
         try {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             await axios.post('http://localhost:8000/api/logout');
             localStorage.removeItem("token");
             delete axios.defaults.headers.common['Authorization'];
-            navigate('/');
+            navigate('/'); // Redirect after logout
         } catch (error) {
-            setError("Failed to logout, please try again.");
+            setError("Gagal logout, coba lagi.");
         }
     };
 
+    // Loading state
     if (loading) {
         return (
             <div className="text-center mt-5">
@@ -102,7 +96,7 @@ function Dashboard() {
                         <div className="card border-0 rounded shadow-sm">
                             <div className="card-body">
                                 {error && <div className="alert alert-danger">{error}</div>}
-                                <h4>SELAMAT DATANG <strong className="text-uppercase">{user.name}</strong></h4>
+                                <h4>SELAMAT DATANG <strong className="text-uppercase">{user.name}</strong></h4> {/* Displaying name from token */}
                                 <hr />
                                 <p className="lead">Welcome to your Dashboard</p>
                             </div>
