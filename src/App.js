@@ -1,24 +1,28 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+  const [auth, setAuth] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) setAuth(true); // Set autentikasi jika token ada di localStorage
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login setAuth={setAuth} />} />
+        <Route 
+          path="/dashboard" 
+          element={<ProtectedRoute auth={auth} element={<Dashboard />} />} 
+        />
+      </Routes>
+    </Router>
   );
 }
 
